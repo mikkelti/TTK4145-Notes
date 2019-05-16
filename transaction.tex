@@ -1,0 +1,62 @@
+\part{Transaction fundamentals}
+Context and motivation for introducing transactions:
+\begin{itemize}
+    \item We need error handling and -containment for systems with multiple participants (threads, processes, distributed systems). These participants must often cooperate in the error handling.
+    \item Transactions (and atomic actions) are techniques/frameworks that provide the means to do this. They fall under the category of dynamic SW redundancy.
+    \item They contribute towards the desired 'error assessment and confinement' design, and help avoiding the 'domino effect'.
+    \item A motivating example is a process control plant with many local controllers, supervisory tasks, monitoring, optimization, several modes of operation and high demands for safety.
+\end{itemize}
+From the learning goals, \textbf{eight design patterns}:
+\begin{enumerate}
+    \item Locking
+    \item Two-phase commits
+    \item Transaction manager (TM)
+    \item Resource manager (RM)
+    \item Log 
+    \item Checkpoints
+    \item Log manager
+    \item Lock manager
+\end{enumerate}
+And some additional terms:
+\begin{itemize}
+    \item Optimistic concurrency control
+    \item Two-phase commit optimization
+    \item Heuristic transactions
+    \item Interposition
+\end{itemize}
+\textbf{Atomic action:} Indivisible operation, either it happens or it does not at all.\newpage
+\textbf{(Atomic) transaction:} 
+\begin{itemize}
+    \item All-or-nothing property to work conducted within its scope.
+    \item Shared resources are protected.
+\end{itemize}
+ACID properties of transactions:
+\begin{enumerate}
+    \item Atomicity: The transaction either commits successfully or rolls back (aborts) completely at fail.
+    \item Consistency: Preserve consistent state.
+    \item Isolation: Intermediate states during a transaction are not visible to the outside. Further, transactions appear to be executing \emph{serially}, even when they are not.
+    \item Durability: The effects of a commited transaction are never lost, i.e. they are stored in stable storage, such as disk.
+\end{enumerate}
+\textbf{Two-phase commits:}
+Associated with each transaction is a coordinator C, that communicates with the participants. The message flow is as follows:
+\begin{verbatim}
+Coordinator                                         Participant
+                              QUERY TO COMMIT
+                -------------------------------->
+                              VOTE YES/NO           prepare*/abort*
+                <-------------------------------
+commit*/abort*                COMMIT/ROLLBACK
+                -------------------------------->
+                              ACKNOWLEDGMENT        commit*/abort*
+                <--------------------------------  
+end
+\end{verbatim}
+The first phase is the commit request (or voting) phase, and includes lasts until the \texttt{VOTE YES/NO} arrow in the above diagram. The second phase is the commit phase, where the operation of each participant is either completed (if all votes were yes) or rolled back (if anyone voted no). Refer to \url{https://en.wikipedia.org/wiki/Two-phase_commit_protocol} for more on the algortihm.
+
+A disadvantage with two-phase commits is that the protocol is blocking. Participants will block after they have voted, awaiting a commit or rollback message. If the coordinator fails, they will never receive either.
+
+
+% Next up: Read about transactions and atomic actions, etc. Use pseucocode actively. Read about code quality. Start doing exams.  
+
+
+

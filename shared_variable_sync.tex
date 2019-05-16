@@ -1,0 +1,24 @@
+\part{Shared variable synchronization}
+\section{Semaphores}
+A \textbf{semaphore} is like an integer, with three key differences:
+\begin{enumerate}
+    \item It can be initialized to any value, but after that only incremented or decremented (its value cannot be read).
+    \item When the semaphore is decremented by a thread, and the result is negative, the thread blocks.
+    \item When the semaphore is incremented by a thread, one waiting thread gets unblocked (if any).
+\end{enumerate} 
+Things to note:
+\begin{itemize}
+    \item After one thread increments the semaphore, and another is woken, they run concurrently.
+    \item A positive value represents the number of threads that can decrement without blocking.
+    \item A negative number represents the number threads that have blocked and are waiting.
+\end{itemize}
+The basic syntax used is:
+\begin{itemize}
+    \item \texttt{sem = Semaphore(1)} to create a new semaphore with the given initial value.
+    \item \texttt{sem.signal()} to increment the semaphore (and wake a waiting thread).
+    \item \texttt{sem.wait()} to decrement the semaphore (and block if the result is negative).
+\end{itemize}
+In the classical example of incrementing/decrementing \texttt{int i}, \texttt{i}'s value must be set pretty high to see synchronization errors. The reason for this is that context switching (switching between threads and saving states) does not happen until a certain time passes. For small \texttt{i}, one thread will typically finish before the second gets a chance to start.
+
+
+

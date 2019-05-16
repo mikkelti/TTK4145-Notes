@@ -1,0 +1,105 @@
+\part{Fault model \& software fault masking}
+Keywords from the part on basic fault tolerance are:
+\begin{itemize}
+    \item Acceptance tests
+    \item Merging failure modes
+    \item Redundancy
+\end{itemize}
+For a fault tolerant system we want the following (progressively better):
+\begin{enumerate}
+    \item Failfast (errors are detected immediately)
+    \item Reliable (failfast + the system is repaired)
+    \item Available (continuous operation)
+\end{enumerate}
+An overview of the process is:
+\begin{enumerate}
+    \item Find failure modes.
+    \item Detect errors / simplify error model, inject errors for testing
+    \item Error handling by redundancy $\rightarrow$ reliable and available module.
+\end{enumerate}
+On error injection:
+\begin{enumerate}
+    \item Simplify by merging failure modes.
+    \item Inject failed acceptance tests.
+\end{enumerate}
+Examples for fault tolerant modules, three basic modules: storage, communication and processing.
+\section{Storage}
+Imagine an array of data. Assume unreliable read and write functions.
+\subsection{Failure modes}
+For writing we have:
+\begin{itemize}
+    \item Writes the wrong data
+    \item Writes to the wrong place
+    \item Does not write
+    \item Fails
+\end{itemize}
+Likewise, for reading:
+\begin{itemize}
+    \item Give wrong data
+    \item Give old data
+    \item Give data from wrong place
+    \item Fails
+\end{itemize}
+
+\subsection{Detection, merging of error modes and error injecction}
+\begin{itemize}
+    \item Detect by also writing address, checksum, versionID and statusbit to the buffer.
+    \item Merging: All errors $\rightarrow$ Fail
+    \item For error injection, spawn a thread that runs in parallel and flips status bits. This seems really smart!
+\end{itemize}
+\subsection{Handling with redundancy}
+\begin{itemize}
+    \item Keep several copies of the buffer, the one with the newest versionID is used (returned).
+    \item Always write back when a reading error occurs (write a 'safe state'?).
+    \item 
+\end{itemize}
+\section{Messages}
+\subsection{Failure modes}
+\begin{itemize}
+    \item Lost
+    \item Delayed
+    \item Corrupted
+    \item Duplicated
+    \item Wrong recipient
+\end{itemize}
+
+\subsection{Detection, merging of error modes}
+\begin{itemize}
+    \item Session ID
+    \item Checksum
+    \item Ack (acknowledgement)
+    \item Sequence numbers
+    \item All errors $\rightarrow$ Lost message
+\end{itemize}
+
+\subsection{Handling with redundancy}
+\begin{itemize}
+    \item Timeout and retransmission
+\end{itemize}
+
+\section{Processes/calculations}
+\textbf{Error mode:} Does not yield the next correct 'side effect'.\\
+\textbf{Detect and merge:} All failed acceptance tests $\rightarrow$ STOP (failfast).\\
+Three ways to handle with redundancy, described in the following subsections.
+
+\subsection{Checkpoint-restart}
+\begin{itemize}
+    \item Write state to storage after each (successful) acceptance test, before each side effect.
+    \item This yields error containment, but requires good acceptance tests.
+\end{itemize}
+\subsection{Process pairs}
+\begin{itemize}
+    \item Two processes; primary and backup (primary does the work).
+    \item Backup takes over if (when) primary fails, and becomes new primary.
+    \item Primary sends IAmAlive-messages and checkpoints to backup.
+    \item NB! Because of resending this does not rely on safe communication. I.e. we get redundancy by resending, communication errors are masked out.
+\end{itemize}
+
+\subsection{Persistent processes}
+\begin{itemize}
+    \item Transactional infrastructure
+    \item All calculations are transactions, i.e. atomic transformations from one consistent state to another.
+    \item The processes are then 'stateless', all states are stored in a database.
+    \item For such simple processes OS can take care of restart.
+\end{itemize}
+Note that reliable and available storage, communication and calculations are necessary to make this transactional infrastructure. Hence one often falls back to one of the first two options.
