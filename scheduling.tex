@@ -1,0 +1,29 @@
+\part{Scheduling}
+Concurrent programs exhibit non-determinism, and a real-time system needs to restrict this non-determinism through scheduling. A scheduling scheme provides two key features:
+\begin{enumerate}
+    \item An algorithm for ordering the use of system (CPU) resources.
+    \item A way to predict the worst-case behavior of the system when the scheduling algorithm is applied.
+\end{enumerate}  
+There are \textbf{static} (prediction only before execution) and \textbf{dynamic} (run-time decisions are used) schemes. Focus for us: static schemes, specifically preemptive priority-based schemes on a single-processor system. The task with the highest priority will always run, unless it is suspended or delayed for some reason. The two features above can be re-stated as:
+\begin{enumerate}
+    \item Priority assignment algorithm
+    \item Schedulability test
+\end{enumerate}
+
+\subsection{Non-preemptive scheduling (cyclic executive)}
+What is non-preemptive scheduling?
+\begin{itemize}
+    \item Fixed set of tasks with fixed periods.
+    \item Consists of a table of procedure calls, the major cycle, comprised of smaller minor cycles with fixed duration.
+    \item At run-time, no tasks run concurrently, therefore mutual exclusion is guaranteed (we don't need e.g. semaphores).
+    \item All task periods must be a multiple of the minor cycle period (obvious drawback).
+\end{itemize}
+What are some of its drawbacks?
+\begin{itemize}
+    \item Difficult to incorporate sporadic tasks.
+    \item Difficult to construct.
+    \item Difficult to incorporate tasks with long periods
+    \item 'Large' tasks will need to be split up into several procedures, which may hurt the quality of the code, and make it more error-prone.
+\end{itemize}
+
+\subsection{Task-based scheduling}

@@ -1,10 +1,87 @@
 \part{Code quality}
-Ultimate SW quality metric: \textbf{maintainability}. 
+Ultimate SW quality metric: \textbf{maintainability}. \textbf{Readability}, among other things, is also important. 
 \section{Modules}
+Intro:
 \begin{itemize}
     \item You should be able to use modules without knowledge of its internals.
     \item You should be able to maintain a module without knowledge of the rest of the system.
-    \item Composition: Easy to build supermodules from submodules.
+    \item Composition: Easy to build supermodules from submodules, this provides scalability.
     \item Coupling: Weak coupling between modules.
     \item Cohesion: The parts of a module should be well connected. 
+    \item Interfaces should be complete and minimal.
 \end{itemize}
+Checklist, \textbf{encapsulation}:
+\begin{enumerate}
+    \item Minimize accessibility to data members
+    \item Avoid exposing member data (same as above?)
+    \item Hide implementation details from other modules
+    \item Avoid making assumptions about users (other modules, derived classes)
+    \item Independent/loosely coupled
+\end{enumerate}
+Checklist, other implementation issues:
+\begin{enumerate}
+    \item $\sim$ 7 data members or fewer
+    \item Minimize direct and indirect routine calls to other modules, i.e. collaborate with other modules only as much as absolutely necessary
+    \item Initialize member data appropriately
+    \item \textbf{Language-specific} issues should also be investigated
+\end{enumerate}
+Key points:
+\begin{enumerate}
+    \item A module interface should provide a consistent abstraction (a way to view a possibly complex implementation in a simpler form).
+    \item Modules are the primary tool for managing complexity.
+\end{enumerate}
+Other tips:
+\begin{itemize}
+    \item Get-functions hurt abstraction, as nothing is 'hidden' by them.
+    \item Services often come in pairs (put/get, init/shutdown, etc. etc. etc.)
+    \item There is no shame in having to redesign.
+    \item Make the interface \emph{programmatic} instead of \emph{semantic}.
+\end{itemize}
+The programmatic part is the data types and other attributes that can be enforced by the compiler, while the semantic part consists of the assumptions about how the interface is supposed to be used. The semantic interface includes things like ``routine A must be called before B'' or ``routine A will crash unless data member 1 is initialized''. 
+
+\section{Routines/functions}
+\begin{enumerate}
+    \item Describing name
+    \item Does one thing, and does it well (functional cohesion)
+    \item Readable, easy to see that it works correctly by only reading it (and no other routines)
+    \item Defensive, i.e. protects itself from bad usage and inputs (assumptions are programmatic, i.e. the function can handle any input the compiler allows)
+    \item Less than 7 parameters
+\end{enumerate}
+A good routine name
+\begin{enumerate}
+    \item Describes 'all' the routine does
+    \item Is specific
+    \item Describes the return value, if it is a function
+    \item Consists of a verb and an object, if it is a procedure
+    \item Hot tip: Standardize conventions for names and abbreviations, as well as parameter order
+\end{enumerate}
+Reasons to create a routine:
+\begin{itemize}
+    \item Encapsulate something
+    \item Introduce abstraction
+    \item Improve readability
+    \item Avoid duplicating code
+    \item Simplify testing
+\end{itemize}
+Big-picture issues
+\begin{itemize}
+    \item Loose coupling with other routines.
+    \item Length determined by functionality and logic, not some artificial coding standard.
+    \item The parameter list provides a consistent interface abstraction.
+\end{itemize}
+Key points
+\begin{itemize}
+    \item Routines should improve readability, reliability and modifiability.
+    \item Functionally cohesive (does one thing, and does it well).
+    \item The name is a metric of quality, a good name expresses what the routine does.
+    \item Macro routines are a last resort.
+\end{itemize}
+
+\section{Variables}
+A good variable name is
+\begin{itemize}
+    \item Describing and specific
+    \item Adapted to the scope and data type of the variable
+\end{itemize}
+Remember: Good code is self-documenting. If things are unclear after reading the code, focus on improving the code, rather than adding comments! Comments should express intent or summarize, not repeat the code. Comments add to the size of the project, remember that they also add to maintenance cost.
+
