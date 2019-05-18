@@ -120,8 +120,8 @@ There are two classes:
     \item \textbf{Environmental detection} - Detection by hardware (e.g. overflow error) or run-time support system (e.g. out of bounds error for array).
     \item \textbf{Application detection}
     \begin{itemize}
-        \item \textbf{Replication checks} - Check if results are equal.
-        \item \textbf{Timing checks} - Can be a \emph{wtachdog timer} that has to be reset with a given frequency, or detection of missed deadlines by the scheduling system.
+        \item \textbf{Replication checks} - Check if results are equal for duplicate threads or processors (like N-version programming).
+        \item \textbf{Timing checks} - Can be a \emph{watchdog timer} that has to be reset with a given frequency, or detection of missed deadlines by the scheduling system.
         \item \textbf{Reversal checks} - Compute the input from the output, and compare with the actual input.
         \item \textbf{Coding checks} - E.g. checksum
         \item \textbf{Reasonableness checks} - \texttt{assert()}-function
@@ -162,6 +162,8 @@ The probability of the domino effect increases with the number of concurrent pro
 
 \subsection{Acceptance test}
 The acceptance test provides an error detection mechanism, e.g. with invokations of \texttt{assert()}. There is always a trade-off between a comprehensive test and affecting the 'happy path' as little as possible. All the error detection techniques discussed in \Cref{sec:error_detection} can be used to create acceptance tests.
+
+Acceptance tests do not focus on specific error situations and error returns, since these will never handle unexpected errors.Instead we put demands on the current state to be acceptable.
 
 \section{Comparison between N-version programming and recovery blocks}
 Brief comparison:

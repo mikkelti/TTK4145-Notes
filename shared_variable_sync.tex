@@ -20,5 +20,81 @@ The basic syntax used is:
 \end{itemize}
 In the classical example of incrementing/decrementing \texttt{int i}, \texttt{i}'s value must be set pretty high to see synchronization errors. The reason for this is that context switching (switching between threads and saving states) does not happen until a certain time passes. For small \texttt{i}, one thread will typically finish before the second gets a chance to start.
 
+\section{Standard problems}
+A (data) \textbf{race condition} is a fault in the design of the interaction between two threads, which leads to the result being highly dependent on the sequence and timing of access to shared variables.
 
+A \textbf{livelock} occurs when a thread gets stuck in e.g. a busy-waiting loop (more generally; a subset of the possible states), and is unable to proceed.
+
+A \textbf{deadlock} occurs when the system is stuck in a circular wait, with no threads being able to proceed. 
+
+\textbf{Starvation} happens when a thread is unable to gain access to a resource it requires, because other threads keep getting it first. Can be caused by an 'unfair' scheduler.
+
+\section{Monitors}
+What is bad with semaphores?
+\begin{itemize}
+    \item Forgetting a wait can lead to multplie threads running concurrently in a \textbf{critical region} (a section of code that should always be executed under mutual exclusion).
+    \item Forgetting a signal can lead to a deadlock.
+    \item The code is distributed all over the system, making maintenance hard.
+\end{itemize}
+
+\subsection{Critical regions}
+\begin{itemize}
+    \item Critical regions but the responsibility for mutual exclusion on the compiler, instead of the programmer. Critical regions of the same name mutually exclude.
+    \item In \textbf{conditional critical regions}, the thread must wait for the mutex lock \emph{and} check a boolean condition before it can proceed. A \textbf{guard} is a more sophisticated form of this boolean condition, which instead runs a test (procedure) that opens or closes for execution.
+\end{itemize}
+Limitations
+\begin{itemize}
+    \item (Conditional) critical regions are still distributed throughout the program.
+\end{itemize}
+
+\subsection{Monitors}
+\begin{itemize}
+    \item A collection of local variables and procedures (basically a module), with a mutex that only allows one thread at a time to access its methods and variables.
+    \item Pro: All code that accesses the shared data is localized.
+    \item Has \textbf{condition variables} (queues of threads waiting for some condition to be true) with operations \texttt{suspend} and \texttt{resume} to block and unblock threads.
+    \item \texttt{suspend} releases the monitor lock.
+    \item The operations are safe, because they can only be accessed/called from inside the monitor.
+\end{itemize}
+Cons
+\begin{itemize}
+    \item Suspending in a nested call does not release the outer lock. Ex. a procedure in monitor A calls a procedure in monitor B, which contains a \texttt{suspend} statement. This makes it infeasible to build supermodules from submodules (that are monitors). 
+    \item The possibility for deadlocks and data races still exists.
+    \item Does not provide other synchronization than condition variables.
+\end{itemize}
+
+\section{Synchronization mechanisms in POSIX, Java and Ada}
+\subsection{Java}
+The \texttt{synchronized} keyword is used to make methods thread-safe. Consider the following class:
+\begin{minted}{java}
+    public class MyClass {
+        private int i;
+
+        public MyClass(int initValue) {
+            i = initValue;
+        }
+
+        public synchronized void increment() {
+            i++;
+        }
+    }
+\end{minted}
+When thread A is executing \texttt{increment()}, all other threads that (wish to) invoke synchronized methods for the same \texttt{MyClass}-object block (suspend) until thread A releases the monitor lock.
+
+\texttt{wait()} is used to suspend the current thread, like this:
+\begin{minted}{java}
+    public synchronized void conditionalIncrement() {
+        while(i < 3) wait();
+        i++;
+    }
+\end{minted}
+Note that since the method is \texttt{synchronized}, thread A must hold the monitor lock before it can invoke it. When it calls \texttt{wait()}, it releases the lock and suspends execution. It will be woken up at some time after the following procedure has run:
+\begin{minted}{java}
+    public synchronized void importantChange() {
+        i = 3;
+        notifyAll();
+    }
+\end{minted} 
+All threads waiting on the lock are notified when \texttt{notifyAll()} is called.
+
+\subsection{Ada}
 
