@@ -29,6 +29,8 @@ A \textbf{deadlock} occurs when the system is stuck in a circular wait, with no 
 
 \textbf{Starvation} happens when a thread is unable to gain access to a resource it requires, because other threads keep getting it first. Can be caused by an 'unfair' scheduler.
 
+A thread that is free from deadlocks, livelocks and infinite postponements (starvation) is said to posess \textbf{liveness}.
+
 \section{Monitors}
 What is bad with semaphores?
 \begin{itemize}
@@ -66,35 +68,143 @@ Cons
 \subsection{Java}
 The \texttt{synchronized} keyword is used to make methods thread-safe. Consider the following class:
 \begin{minted}{java}
-    public class MyClass {
-        private int i;
+public class MyClass {
+    private int i;
 
-        public MyClass(int initValue) {
-            i = initValue;
-        }
-
-        public synchronized void increment() {
-            i++;
-        }
+    public MyClass(int initValue) {
+        i = initValue;
     }
+
+    public synchronized void increment() {
+        i++;
+    }
+}
 \end{minted}
 When thread A is executing \texttt{increment()}, all other threads that (wish to) invoke synchronized methods for the same \texttt{MyClass}-object block (suspend) until thread A releases the monitor lock.
 
 \texttt{wait()} is used to suspend the current thread, like this:
 \begin{minted}{java}
-    public synchronized void conditionalIncrement() {
-        while(i < 3) wait();
-        i++;
-    }
+public synchronized void conditionalIncrement() {
+    while(i < 3) wait();
+    i++;
+}
 \end{minted}
 Note that since the method is \texttt{synchronized}, thread A must hold the monitor lock before it can invoke it. When it calls \texttt{wait()}, it releases the lock and suspends execution. It will be woken up at some time after the following procedure has run:
 \begin{minted}{java}
-    public synchronized void importantChange() {
-        i = 3;
-        notifyAll();
-    }
+public synchronized void importantChange() {
+    i = 3;
+    notifyAll();
+}
 \end{minted} 
 All threads waiting on the lock are notified when \texttt{notifyAll()} is called.
 
 \subsection{Ada}
-Ada offers monitors as \emph{protected modules}. A protected module can be either a single protected object or a protected type, which can contain many objects. 
+\texttt{Protected types} are data types protected from inappropriate simeltanous access by multiple tasks. They are split into an interface definition and an operation implementation, as shown below.
+\begin{minted}{ada}
+protected type Counting_Semaphore is
+    procedure Release;
+    entry Acquire;
+    function Lock_Count return Natural;
+private 
+    Count : Natural := 0; -- Natural number, i.e. geq 0.
+end Counting_Semaphore;
+
+protected body Counting_Semaphore is 
+    procedure Release is
+    begin
+        if Count > 0 then
+            Count := Count - 1;
+        end if;
+    end Release;
+
+    entry Acquire when Count < 11 is
+    begin   
+        Count := Count + 1;
+    end Acquire;
+
+    function Lock_Count return Natural is 
+    begin
+        return Count;
+    end Lock_Count;
+end Counting_Semaphore;
+\end{minted}
+We take note of the following from the example:
+\begin{itemize}
+    \item \texttt{Procedures} can modify the state, and guarantee mutual exclusion. 
+    \item \texttt{Entries} are similar, but they have a boundary condition that must be true before they can execute. 
+    \item \texttt{Functions} cannot change the state, only read it. They have concurrent access, not exclusive.
+\end{itemize}
+Ada supports ATC, which is useful for forward error recovery. This is implemented with the \texttt{select-then-abort} statement. Tasks are notified asynchronously and immediately when an event occurs, either a \texttt{delay} or the condition of an \texttt{entry} becoming true. This allows other tasks to be aborted when one fails, so that no wasted work is done.
+\begin{minted}{ada}
+select
+    Wait_For_Abort; -- Run this entry when the boundary condition is true
+    -- Forward ER code
+then abort
+    begin
+        Do_Work;
+    exception
+        when Work_Failed => -- Can be raised by Do_Work
+            Abort_Procedure; -- Triggers Wait_For_Abort
+    end;
+end select;
+\end{minted}
+The \texttt{requeue} keyword is used in an entry body to delay the execution of certain statements in the body. Example:
+\begin{minted}{ada}
+entry My_Entry when My_Cond = True is 
+begin
+    if Data_Available then
+        Do_Work;
+    else
+        requeue Wait_For_Data;
+    end if;
+end My_Entry;
+\end{minted}
+
+\subsection{POSIX/C}
+Example usage of \texttt{pthread} with mutexes:
+\begin{minted}{c}
+int i = 0;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
+void* increment() {
+    for (int j = 0; j < 1000000; j++) {
+        pthread_mutex_lock(&mutex);
+        i++;
+        pthread_mutex_unlock(&mutex);
+    }
+    return NULL;
+}
+
+void* decrement() {
+    for (int j = 0; j < 1000000; j++) {
+        pthread_mutex_lock(&mutex);
+        i--;
+        pthread_mutex_unlock(&mutex);
+    }
+    return NULL;
+}
+
+int main() {
+    pthread_t A;
+    pthread_t B;
+
+    pthread_create(&A, NULL, increment, NULL);
+    pthread_create(&B, NULL, decrement, NULL);
+
+    pthread_join(A, NULL);
+    pthread_join(B, NULL);
+
+    printf("i = %d\n", i);
+    return 0;
+}
+\end{minted} 
+\newpage
+For exceptions and error handling in C, \texttt{goto} and \texttt{setjmp/longjmp} can be used. Basic \texttt{goto} syntax:
+\begin{minted}{c}
+goto label;
+.
+.
+.
+label: statements // Could also be above goto
+\end{minted}
+See \url{https://en.wikipedia.org/wiki/Setjmp.h} for examples with \texttt{setjmp/longjmp}.

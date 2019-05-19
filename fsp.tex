@@ -1,0 +1,52 @@
+\part{Modeling of concurrent programs}
+Classic deadlock example:
+\begin{verbatim}
+T1:
+    while (1) {
+        Wait(A)
+        Wait(B)
+        ...
+        Signal(A)
+        Signal(B)
+    }
+
+T2:
+    while (1) {
+        Wait(B)
+        Wait(A)
+        ... 
+        Signal(B)
+        Signal(A)
+    }
+\end{verbatim}
+Let us introduce \textbf{processes} and \textbf{events}. All processes that 'care about' an event experience it at the same time. For modeling we use FSP (Finite State Processes) $\subset$ CSP (Communicating Sequential Processes). Note that Ada \texttt{entries} can be modelled as events. For messagebased systems (message passing, synchronous communication), modeling with processes, events and guards comes naturally.  
+\begin{verbatim}
+    T1 = (t1wa -> t1wb -> t1sb -> t1sa -> T1).
+    T2 = (t2wb -> t2wa -> t2sa -> t2sb -> T2).
+\end{verbatim}
+No deadlock is visible here, we need to model the semaphores:
+\begin{verbatim}
+    SA = (t1wa -> t1sa -> SA | t2wa -> t2sa -> SA).
+    SB = (t1wb -> t1sb -> SB | t2wb -> t2sb -> SB).
+\end{verbatim}
+To model the complete, concurrent/parallel system:
+\begin{verbatim}
+    ||SYSTEM = (T1 || T2 || SA || SB).
+\end{verbatim}
+In a \textbf{transition diagram}, a deadlock is a state with no exit. A livelock is a subset of states we cannot exit. Dining philosophers with deadlock is shown next
+\begin{verbatim}
+    FORK = (get -> put -> FORK).
+    PHIL = (sitdown -> right.get -> left.get -> eat ->
+            right.put -> left.put -> arise -> PHIL).
+    
+    || DINERS(N=5) = forall [i:0..N-1]
+            (phil[i]:PHIL ||
+            {phil[i].left, phil[(i-1+N)%N].right}::FORK).
+\end{verbatim}
+Some advance syntax is used here:
+\begin{itemize}
+    \item \texttt{phil[i]:PHIL} exchanges \texttt{eat} with \texttt{phil1.eat}, and thus takes care of all events for all N philosophers.
+    \item \texttt{{phil[i].left, phil[(i-1+N)\%N].right}} means that either of the two options in curly braces are possible.
+    \item \texttt{{phil[i].left, phil[(i-1+N)\%N].right}::FORK} then means that either \texttt{phil[i].left.get} or \texttt{phil[(i-1+N) mod N].right.get} are possible for the same fork, i.e. it can be picked up by the philosopher to its right or left.
+\end{itemize}
+See notebook for transition diagram with three philisophers.

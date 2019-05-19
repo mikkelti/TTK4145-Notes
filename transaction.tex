@@ -24,7 +24,7 @@ And some additional terms:
     \item Heuristic transactions
     \item Interposition
 \end{itemize}
-\textbf{Atomic action:} Indivisible operation, either it happens or it does not at all.\newpage
+\textbf{Atomic operation:} Indivisible operation, either it happens or it does not at all.\newpage
 \textbf{(Atomic) transaction:} 
 \begin{itemize}
     \item All-or-nothing property to work conducted within its scope.
@@ -39,7 +39,7 @@ ACID properties of transactions:
     \item Durability: The effects of a commited transaction are never lost, i.e. they are stored in stable storage, such as disk.
 \end{enumerate}
 \textbf{Two-phase commits:}
-Associated with each transaction is a coordinator C, that communicates with the participants. The message flow is as follows:
+Associated with each transaction is a coordinator C (could also be a Transaction manager (TM)), that communicates with the participants. The message flow is as follows:
 \begin{verbatim}
 Coordinator                                         Participant
                               QUERY TO COMMIT
@@ -54,10 +54,77 @@ end
 \end{verbatim}
 The first phase is the commit request (or voting) phase, and includes lasts until the \texttt{VOTE YES/NO} arrow in the above diagram. The second phase is the commit phase, where the operation of each participant is either completed (if all votes were yes) or rolled back (if anyone voted no). Refer to \url{https://en.wikipedia.org/wiki/Two-phase_commit_protocol} for more on the algortihm.
 
-A disadvantage with two-phase commits is that the protocol is blocking. Participants will block after they have voted, awaiting a commit or rollback message. If the coordinator fails, they will never receive either.
+A disadvantage with two-phase commits is that the protocol is blocking. Participants will block after they have voted, awaiting a commit or rollback message. If the coordinator fails, they will never receive either. 
 
+\section{The 8 design patterns}
+\subsection{Locking}
+\begin{itemize}
+    \item Ensures that intermediate states are not propagated
+    \item No communication outside participants of the transaction.
+\end{itemize}
+With backwards error recovery, the flow of control of a single-threaded program is as follows:
+\begin{verbatim}
+allocate locks
+create recovery point
+do work (goto end if any problems)
+label end:
+if (error) {
+    roll back to recovery point 
+    status = FAIL
+} else {
+    status = OK
+}
+release locks
+return status
+\end{verbatim}
+Note that it is the \textbf{acceptance test} that is responsible for detecting the errors in the program above. The \textbf{lock manager} can:
+\begin{itemize}
+    \item Release all locks associated with transaction X
+    \item Tidy up after restart
+    \item Handle resources shared by several RMs
+    \item Include deadlock avoidance and detection alogrithms
+\end{itemize}
 
-% Next up: Read about transactions and atomic actions, etc. Use pseucocode actively. Read about code quality. Start doing exams.  
+\subsection{The transaction manager}
+Useful if there are multiple participants.
+\begin{itemize}
+    \item Creates the transaction, keeps track of participants 
+    \item Plays the role of the coordinater discussed earlier
+    \item Can give the transaction a deadline, and abort if it is missed
+\end{itemize}
 
+\subsection{The resource manager}
+Resource manager $\equiv$ transaction participant.
+\begin{itemize}
+    \item Keeps track of locks and recovery points
+    \item Communicates with manager during voting and commit phases
+\end{itemize}
 
+\subsection{The log}
+\begin{itemize}
+    \item Every participant (including the TM) writes every planned change of state to the log, and waits until the operation is confirmed safe to perform it
+    \item Processes can restore state after restart by executing the logrecords (of commited work)
+    \item Logrecords can be executed backwards to undo actions, we don't need recovery points anymore!
+    \item Solution: Write checkpoints (state and list of active transactions) to the log. Log older than the last checkpoint with no active transactions can safely be deleted
+    \item The \textbf{log manager} queues logrecords , optimizes disk access and sends receipts (ack) on received log record
+\end{itemize}
 
+\subsection{Other terms}
+\textbf{Optimistic concurrency control:}
+\begin{itemize}
+    \item Assume no task-interference, detect afterwards and abort if it has happened
+    \item Replaces locking
+\end{itemize}
+\textbf{Two-phase commit optimizations:}
+\begin{itemize}
+    \item Early abort using e.g. ATC 
+    \item One-phase when there is only one participant (can commit or block directly, without voting)
+    \item Read-only operations will never be aborted, thus it will always be a commit 
+    \item Last resource commit: One participant (maybe responsible for real-world interaction) gets to wait until everyone else has voted to make his decision
+\end{itemize}
+\textbf{Heurisitc transactions:}
+\begin{itemize}
+    \item What if we give our vote, then lose connection?
+    \item We have to make a local guess, and maybe do forward error recovery after.
+\end{itemize}
+\textbf{Interposition} is the TM's ability to play the role of RM.

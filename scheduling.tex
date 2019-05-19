@@ -27,3 +27,42 @@ What are some of its drawbacks?
 \end{itemize}
 
 \subsection{Task-based scheduling}
+The simple task model makes the following assumptions:
+\begin{enumerate}
+    \item Fixed set of periodic tasks, with known periods
+    \item Independent tasks 
+    \item Deadline = period 
+    \item Zero overhead
+    \item Fixed worst-case execution time 
+    \item No internal suspension (e.g. blocking I/O request)
+    \item One core (CPU)
+\end{enumerate}
+In real-time systems priority is determined by temporal requirements. Two important approaches to scheduling are:
+\begin{itemize}
+    \item Fixed-priority scheduling (FPS), static 
+    \item Earliest deadline first (EDF), dynamic 
+\end{itemize}
+
+\subsection{Response time analysis}
+Response time as function of computation time and interference:
+\begin{equation*}
+    R_i = C_i + I_i,
+\end{equation*}
+where
+\begin{equation*}
+    I_i = \sum_{j \in hp(i)} \ceil[\bigg]{\frac{R_i}{T_j}}
+\end{equation*}
+Note that the equation has $R_i$ on both sides, and is difficult to solve. We have a better way:
+\begin{equation*}
+    w_i^{n+1} = C_i + \sum_{j \in hp(i)} \ceil[\bigg]{\frac{w_i^n}{T_j}}C_j, \quad w_i^0 = C_i
+\end{equation*}
+When $w_i^{n+1} = w_i^n$, we have the solution for $R_i$. If $R_i \leq T_i = D_i$, all is good.
+
+\subsection{Priority ceiling protocol}
+A priority ceiling protocol avoids \textbf{unbounded priority inversion} and deadlock. Each shared resource is assigned a ceiling priority equal to the highest priority of any task that can lock it. We have two variants: OCCP (original) and ICCP (immediate). Both work by temporarily raising the priorities of tasks.
+
+In \textbf{ICCP}, a tasks priority is set to the ceiling priority of the resource it locks, so that no task that may want to lock the resource can be scheduled.
+
+In \textbf{OCCP} the priority of a low-priority task X which locks resource Q is raised (to the Q's ceiling) when a higher-priority task Y tries to acquire Q. I.e. no priority reassignment occurs before any actual blocking happens. 
+
+Note that in both cases a task can only lock a resource if its \emph{dynamic} priority is higher than the ceilings of all resources already locked by other tasks.

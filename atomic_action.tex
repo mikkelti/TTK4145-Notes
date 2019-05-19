@@ -1,0 +1,41 @@
+\part{Atomic actions}
+\textbf{Definition:} An atomic (indivisible, isolated) transformation of the system from one consistent state to another. Transactions are generalized to atomic actions with forward error recovery. I.e. atomic actions are actions with either forward or backward error recovery, while transactions are actions with backward error recovery. Nice, because backward ER might not be viable in a RT setting.
+\section{Features of an AA}
+\begin{itemize}
+    \item Explicit membership
+    \item Well defined \textbf{start boundary} with recovery points in the case of backward ER (not necessarily coordinated in time)
+    \item \textbf{Side boundary}, i.e. no communication with non-participants
+    \item A clear \textbf{end boundary} (coordinated in time!)
+\end{itemize}
+\subsection{Standard AA implementation}
+Start boundary:
+\begin{enumerate}
+    \item Dynamic (call to e.g. \texttt{startWork()})
+\end{enumerate}
+Side boundary:
+\begin{enumerate}
+    \item Locking
+    \item No unlocking before safe state (end boundary)
+\end{enumerate}
+End boundary:
+\begin{enumerate}
+    \item Vote-counting (two-phase commit)
+    \item Synchronization primitive \emph{barrier} (no can pass through before everyone has arrived)
+\end{enumerate}
+\section{Language-specific implementation}
+Java:
+\begin{itemize}
+    \item Synchronized methods, wait, notify/notifyAll
+    \item Asynchronous exceptions
+\end{itemize}
+Ada:
+\begin{itemize}
+    \item Protected objects
+    \item Functions procedures and entries with guards
+\end{itemize}
+C/POSIX:
+\begin{itemize}
+    \item \texttt{pthread\_cancel}
+    \item \texttt{setjmp} and \texttt{longjmp}
+\end{itemize}
+
